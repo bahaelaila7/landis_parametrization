@@ -1,0 +1,94 @@
+LandisData  "Output Biomass"
+
+Timestep  5
+
+MakeTable yes  << Optional parameter
+
+Species	QUFA
+	QUST
+	QUAL
+	LIST2
+	FAGR
+	JUVI
+	QUNI
+	QUVE
+	PRSE2
+	ULAL
+	LITU
+	MORU2
+	FRAM2
+	CAAL27
+	DIVI5
+	CAGL8
+	OSVI
+	CECA4
+	NYSY
+	QUPA5
+	PIEC2
+	FRPE
+	MAPO
+	CELA
+	SASAD
+	SILAL3
+	QUMA2
+	OXAR
+	ACRU
+	QURU
+	ILOP
+	PIEL
+	COFL2
+	PITA
+	MEAZ
+	QUCO2
+	QUPR2
+	ACBA3
+	SAAL5
+	PIVI2
+	MAMA2
+	MAVI2
+	CAOV2
+	MAAC
+	CACO15
+	ULRU
+	QUMI
+	ULAM
+	QUPH
+	QUMA3
+	JUNI
+	CEOC
+	CACA18
+	PISE
+	GOLA
+	QULA3
+	CATE9
+	CRATA
+	ROPS
+	AIAL
+	ACSA2
+	ACNE2
+	PIPA2
+	CAOV3
+	QUSH
+	QULA2
+	QULY
+	TIAM
+	PRAM
+	QUMU
+	TIAMC
+	PIST
+	TSCA
+	BENI
+	SANI
+	CAIL2
+	PRUNU
+	MAAN3
+	CALA21
+	PLOC
+	ALJU
+
+
+MapNames  outputs/biomass/biomass-{species}-{timestep}.tif
+
+DeadPools both
+	  
+MapNames  outputs/biomass/biomass-{pool}-{timestep}.tif
