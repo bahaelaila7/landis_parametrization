@@ -10,8 +10,15 @@ RNG = np.random.default_rng(seed=1)
 
 SpeciesData =namedtuple('SpeciesData',['species_symbol', 'longevity', 'sex_mat', 'seed_disp_eff', 'seed_disp_max', 'reprod_prob', 'sprout_age_min', 'sprout_age_max', 'fire_regen']) 
 
-def generate_species_data(species_symbol):
-    longevity =RNG.integers(2,61)*5
+def generate_species_data(species_symbol, SPECIES_MAX_AGE):
+    species_max_age  = SPECIES_MAX_AGE.get(species_symbol)
+    if species_max_age is not None:
+        species_max_age5 = int((species_max_age)/5)
+        print(species_symbol, species_max_age, species_max_age5*5)
+        longevity = RNG.integers(low=max(2,species_max_age5), high=max(species_max_age5,61))*5
+    else:
+        longevity = RNG.integers(2, 61)*5
+    print(longevity)
     seed_disp_max = 10*RNG.integers(100)
     return SpeciesData(species_symbol = species_symbol, 
                        longevity = longevity,
@@ -25,10 +32,10 @@ def generate_species_data(species_symbol):
 def generate_species_params(species_symbol):
     return SpeciesParams(SpeciesCode= species_symbol,
                          LeafLongevity= RNG.uniform(1,10),
-                         WoodDecayRate= RNG.uniform()*0.4,
+                         WoodDecayRate= RNG.uniform(0.0, 0.4),
                          MortalityCurve=RNG.uniform(5,25),
                          GrowthCurve = RNG.uniform(),
-                         LeafLignin = RNG.uniform()*0.4,
+                         LeafLignin = RNG.uniform(0.0,0.4),
                          ShadeTolerance = 1+RNG.integers(5), 
                          FireTolerance = 1+RNG.integers(5),
                          )
@@ -472,7 +479,7 @@ Species   	Core_species_data.txt
 Ecoregions      ./ecoregions.txt
 EcoregionsMap   ./ecoregions.tif
 
-CellLength  	30 << meters, 100 x 100 m = 1 ha
+CellLength  	63.6149353533 << meters, 100 x 100 m = 1 ha
 
 
 
@@ -686,6 +693,10 @@ MapNames  outputs/biomass/biomass-{{pool}}-{{timestep}}.tif'''
     with open(f'{prefix}/output_Biomass.txt','w') as f:
         f.write(txt)
 
+def load_max_age(csv_file):
+    return {row['species_symbol']: row['max_age'] for _, row in pd.read_csv(csv_file).iterrows()}
+
+
 
 
 
@@ -697,12 +708,13 @@ if __name__ == '__main__':
     prefix = f'./{sys.argv[1]}'
     print(subprocess.run(['cp', '-r', './template',prefix]))
     plots = load_plots_data('./data_fl5_plot_genus_sp_ba_age_agb_20.csv')
+    SPECIES_MAX_AGE = load_max_age('./max_treeage.csv')
     print(len(plots))
     ecoregions = generate_initial_communities_and_ecoregions(prefix,plots)
     ##rs = get_core_species_params()
     ##rs = replace_species(rs,get_fl5_species())
     fl5_species = get_fl5_species()
-    rs = [generate_species_data(sp) for sp in fl5_species]
+    rs = [generate_species_data(sp, SPECIES_MAX_AGE) for sp in fl5_species]
     from pprint import pprint
     pprint(rs)
     generate_core_species_file(prefix, rs)
