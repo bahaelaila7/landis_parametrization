@@ -1,7 +1,8 @@
 #!/bin/bash
-PREFIX="template-test1"
+PREFIX=$1
+SEED=$2
 rm -rf "$PREFIX"
-python generate_experiment_files.py "$PREFIX" 
+python generate_experiment_files.py "$PREFIX" $2
 pushd "$PREFIX" 
 ./run_simulation.sh 
 popd 

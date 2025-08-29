@@ -6,30 +6,29 @@ import sys
 import numpy as np
 import pandas as pd
 from PIL import Image
-RNG = np.random.default_rng(seed=1)
 
 SpeciesData =namedtuple('SpeciesData',['species_symbol', 'longevity', 'sex_mat', 'seed_disp_eff', 'seed_disp_max', 'reprod_prob', 'sprout_age_min', 'sprout_age_max', 'fire_regen']) 
 
-def generate_species_data(species_symbol, SPECIES_MAX_AGE):
+def generate_species_data(RNG, species_symbol, SPECIES_MAX_AGE):
     species_max_age  = SPECIES_MAX_AGE.get(species_symbol)
     if species_max_age is not None:
         species_max_age5 = int((species_max_age)/5)
-        print(species_symbol, species_max_age, species_max_age5*5)
+        #print(species_symbol, species_max_age, species_max_age5*5)
         longevity = RNG.integers(low=max(2,species_max_age5), high=max(species_max_age5,61))*5
     else:
         longevity = RNG.integers(2, 61)*5
-    print(longevity)
-    seed_disp_max = 10*RNG.integers(100)
+    #print(longevity)
+    seed_disp_max = RNG.integers(1,100)
     return SpeciesData(species_symbol = species_symbol, 
                        longevity = longevity,
                        sex_mat = RNG.integers(min(41,longevity)), 
-                       seed_disp_eff = RNG.integers(1,int(0.5*(seed_disp_max/5)))*5, 
+                       seed_disp_eff = 1 + int(RNG.uniform(0.1,0.9)*seed_disp_max),
                        seed_disp_max = seed_disp_max, 
                        reprod_prob = 1,
                        sprout_age_min = 0, 
                        sprout_age_max= min(80,longevity), 
                        fire_regen = 'none')
-def generate_species_params(species_symbol):
+def generate_species_params(RNG, species_symbol):
     return SpeciesParams(SpeciesCode= species_symbol,
                          LeafLongevity= RNG.uniform(1,10),
                          WoodDecayRate= RNG.uniform(0.0, 0.4),
@@ -39,7 +38,7 @@ def generate_species_params(species_symbol):
                          ShadeTolerance = 1+RNG.integers(5), 
                          FireTolerance = 1+RNG.integers(5),
                          )
-def generate_spp_params(species_symbol, ecoregion, year = 0):
+def generate_spp_params(RNG, species_symbol, ecoregion, year = 0):
     return SppParams (Year = year,
                       EcoregionName= ecoregion,
                       SpeciesCode = species_symbol, 
@@ -151,7 +150,7 @@ def generate_initial_communities_and_ecoregions(prefix, plots):
 ''')
         for eco_desc, (eco_idx, eco_name, eco_active) in ecoregions_dict.items():
             f.write(f"{'yes' if eco_active else 'no'}  {eco_idx}  {eco_name}  {eco_desc}\n")
-    print(ecoregions_dict)
+    #print(ecoregions_dict)
     img = Image.fromarray(ecoregions.reshape(1,-1))
     img.save(f'{prefix}/ecoregions.tif', format='TIFF')
     return ecoregions_dict
@@ -628,7 +627,7 @@ ALJU,3.6,0.64,23.3,0.42,0.16,1,1'''
 def generate_prism_data(prefix, ecoregions):
     f = f'{prefix}/PRISM_data.csv'
     df = pd.read_csv(f)
-    print(df)
+    #print(df)
     d = df['101']
     df = df.drop('101', axis=1)
     for _,(_,eco_name, is_active) in ecoregions.items():
@@ -706,32 +705,31 @@ if __name__ == '__main__':
     import sys
 
     prefix = f'./{sys.argv[1]}'
+    seed = int(sys.argv[2])
+    RNG = np.random.default_rng(seed=seed)
     print(subprocess.run(['cp', '-r', './template',prefix]))
-    plots = load_plots_data('./data_fl5_plot_genus_sp_ba_age_agb_20.csv')
+    PLOTS = load_plots_data('./data_fl5_plot_genus_sp_ba_age_agb_20.csv')
     SPECIES_MAX_AGE = load_max_age('./max_treeage.csv')
-    print(len(plots))
-    ecoregions = generate_initial_communities_and_ecoregions(prefix,plots)
     ##rs = get_core_species_params()
     ##rs = replace_species(rs,get_fl5_species())
-    fl5_species = get_fl5_species()
-    rs = [generate_species_data(sp, SPECIES_MAX_AGE) for sp in fl5_species]
-    from pprint import pprint
-    pprint(rs)
-    generate_core_species_file(prefix, rs)
+    FL5_SPECIES = get_fl5_species()
+    generate_experiment(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX)
+
+
+def generate_experiment(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX ):
+    ECOREGIONS = generate_initial_communities_and_ecoregions(PREFIX,PLOTS)
+    rs = [generate_species_data(RNG, sp, SPECIES_MAX_AGE) for sp in FL5_SPECIES]
+    generate_core_species_file(PREFIX, rs)
     ##sps = get_species_params()
     ##sps = replace_species(sps,get_fl5_species())
-    sps = [generate_species_params(sp) for sp in fl5_species]
-    pprint(sps)
-    generate_species_params_file(prefix, sps)
+    sps = [generate_species_params(RNG, sp) for sp in FL5_SPECIES]
+    generate_species_params_file(PREFIX, sps)
     #spps = get_spp_params()
     #spps = replace_species(spps,get_fl5_species())
-    print(ecoregions)
-    spps = [generate_spp_params(sp,eco_name) for sp in fl5_species for _,(_,eco_name,is_active) in ecoregions.items() if is_active]
-    pprint(spps)
-    generate_spp_file(prefix, spps)
-    generate_biomass_succession_file(prefix, ecoregions)
-    generate_scenario_file(prefix)
-    generate_prism_data(prefix, ecoregions)
-    generate_output_biomass_file(prefix, get_fl5_species())
-
-
+    spps = [generate_spp_params(RNG, sp,eco_name) for sp in FL5_SPECIES for _,(_,eco_name,is_active) in ECOREGIONS.items() if is_active]
+    generate_spp_file(PREFIX, spps)
+    generate_biomass_succession_file(PREFIX, ECOREGIONS)
+    generate_scenario_file(PREFIX)
+    generate_prism_data(PREFIX, ECOREGIONS)
+    generate_output_biomass_file(PREFIX, FL5_SPECIES)
+    return PREFIX
