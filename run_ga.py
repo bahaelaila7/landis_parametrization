@@ -11,7 +11,7 @@ import numpy as np
 
 
 
-def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, MAX_ITER = 1000, T = 100000, alpha = 0.99992 ):
+def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, MAX_ITER = 1000, T = 1000, alpha = 0.9992 ):
     best = -np.inf
     r2 = -np.inf
     exp_seed = RNG.integers(10000)
@@ -30,21 +30,21 @@ def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_d
         print(subprocess.run(['bash', '-c', f'cd {prefix} && ./run_simulation.sh']))
         df = read_csvs(prefix)
         outputs= compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
-        r2 =outputs[0]['r2_restricted']
-        r2_unrestricted = outputs[0]['r2_unrestricted']
+        new_r2 =outputs[0]['r2_restricted']
+        new_r2_unrestricted = outputs[0]['r2_unrestricted']
         best = max(best, outputs[0]['r2_restricted'])
         print("#"*80)
         print("#"*80)
-        print(f"{prefix}: seed:{exp_seed} r2_linear_fit: {r2_unrestricted} r2:{r2} BEST:{best}")
+        print(f"{prefix}: seed:{exp_seed} r2_linear_fit: {new_r2_unrestricted} r2:{new_r2} BEST:{best}")
         print("#"*80)
         print("#"*80)
-        diff = r2 - best
+        diff = new_r2 - r2
         e = np.exp(diff / T)
         E = RNG.random()
         b = diff > 0 or e >= E
         print(f"Diff: {diff:e}, T:{T:e}, e:{e:e}, E:{E:e}, b:{b}")
         if b:
-            rs, sps, spps = new_rs, new_sps, new_spps
+            r2, rs, sps, spps = new_r2, new_rs, new_sps, new_spps
         T *= alpha
         if T  == 0:
             return
