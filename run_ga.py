@@ -9,6 +9,11 @@ from generate_experiment_files import *
 from collect_run_data import *
 
 
+def mutate(RNG, params):
+    pass
+def crossover(RNG, params):
+    pass
+
 
 def random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df ):
     
@@ -16,11 +21,12 @@ def random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plo
     for i in range(30):
         exp_seed = RNG.integers(10000)
         exp_RNG = np.random.default_rng(seed=exp_seed)
-        prefix = f'exp_{i:03d}'
+        prefix = f'exp_outputs/exp_{i:03d}'
         print(subprocess.run(['rm', '-rf',prefix]))
         print(subprocess.run(['cp', '-r', './template',prefix]))
         prefix = generate_experiment(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix)
-        print(subprocess.run(['bash', '-c', f'cd {prefix} && ./run_simulation.sh >/dev/null']))
+        print(subprocess.run(['bash', '-c', f'cd {prefix} && ./run_simulation.sh']))
+        return
         df = read_csvs(prefix)
         outputs= compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
         r2 =outputs[0]['r2_restricted']
