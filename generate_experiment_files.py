@@ -12,17 +12,29 @@ SpeciesData =namedtuple('SpeciesData',['species_symbol', 'longevity', 'sex_mat',
 
 def mutate_param(RNG, mu_param, param,  param_type=int, mutate_type='random', gauss_rate = 0.1, l=0, r=None):
     if not mu_param:
+        if param_type == int or param_type == float:
+            if l is not None:
+                param = max(l, param)
+            if r is not None:
+                param = min(r, param)
+            param = param_type(param)
         return param
     if param_type == int or param_type == float :
         assert l!= None, r!= None
+        old_param = param
         if mutate_type == 'gauss':
             param = min(r, max(l, RNG.normal(param, gauss_rate * (r-l+1))))
         elif mutate_type == 'random':
             param = RNG.uniform(l, r)
+        print(old_param, param_type, param, param_type(param))
         return param_type(param)
     elif isinstance(param_type, list):
         if param is not None:
-            param = RNG.choice(param_type - param)
+            print(param_type)
+            print(param)
+            param_type.remove(param)
+            print(param_type)
+            param = RNG.choice(param_type)
         else:
             param = RNG.choice(param_type)
         return param
@@ -32,19 +44,26 @@ def mutate_param(RNG, mu_param, param,  param_type=int, mutate_type='random', ga
 
 def mutate_species_data(RNG, species_data,  SPECIES_MAX_AGE, mu_rate=0.1, gauss_rate = 0.1, mutate_type='random'):
     species_symbol, longevity, sex_mat, seed_disp_eff, seed_disp_max, reprod_prob, sprout_age_min, sprout_age_max, fire_regen = species_data
-    mu_longevity, mu_sex_mat, mu_seed_disp_eff, mu_seed_disp_max, mu_reprod_prob, mu_sprout_age_min, mu_sprout_age_max, mu_fire_regen = RNG.uniform(size = 8) <= mu_rate
+    if mu_rate is None:
+        choice = RNG.choice(8)
+        choices = np.full(8,0)
+        choices[choice] = 1
+        mu_longevity, mu_sex_mat, mu_seed_disp_eff, mu_seed_disp_max, mu_reprod_prob, mu_sprout_age_min, mu_sprout_age_max, mu_fire_regen = choices
+    else:
+        mu_longevity, mu_sex_mat, mu_seed_disp_eff, mu_seed_disp_max, mu_reprod_prob, mu_sprout_age_min, mu_sprout_age_max, mu_fire_regen = RNG.uniform(size = 8) <= mu_rate
 
+    print(mu_longevity, mu_sex_mat, mu_seed_disp_eff, mu_seed_disp_max, mu_reprod_prob, mu_sprout_age_min, mu_sprout_age_max, mu_fire_regen)
     species_max_age  = SPECIES_MAX_AGE.get(species_symbol)
     if species_max_age is not None:
         species_max_age5 = int((species_max_age)/5)
         #print(species_symbol, species_max_age, species_max_age5*5)
-        longevity = mutate_param(RNG, mu_longevity, longevity, param_type = int, gauss_rate = gauss_rate, mutate_type = mutate_type, l=max(2,species_max_age5), r=max(species_max_age5,61)) *5 #RNG.integers(2, 61)*5 RNG.integers(low=max(2,species_max_age5), high=max(species_max_age5,61))*5
+        longevity = mutate_param(RNG, mu_longevity, longevity, param_type = int, gauss_rate = gauss_rate, mutate_type = mutate_type, l=max(2,species_max_age5)*5, r=max(species_max_age5,61)*5)  #RNG.integers(2, 61)*5 RNG.integers(low=max(2,species_max_age5), high=max(species_max_age5,61))*5
     else:
-        longevity = mutate_param(RNG, mu_longevity, longevity, param_type = int, gauss_rate = gauss_rate, mutate_type = mutate_type,l=2, r=61) *5 #RNG.integers(2, 61)*5
+        longevity = mutate_param(RNG, mu_longevity, longevity, param_type = int, gauss_rate = gauss_rate, mutate_type = mutate_type,l=2*5, r=61*5)  #RNG.integers(2, 61)*5
     #print(longevity)
     seed_disp_max = mutate_param(RNG, mu_seed_disp_max, seed_disp_max, param_type = int, gauss_rate = gauss_rate , mutate_type = mutate_type,l=1, r=100)
     sprout_age_max = min(mutate_param(RNG, mu_sprout_age_max, sprout_age_max, param_type = int, gauss_rate = gauss_rate,mutate_type = mutate_type, l = 1, r = 80), longevity)
-    return SpeciesData(species_symbol = species_symbol, 
+    x =  SpeciesData(species_symbol = species_symbol, 
                        longevity = longevity,
                        sex_mat = mutate_param(RNG, mu_sex_mat, sex_mat, param_type=int,mutate_type = mutate_type, gauss_rate = gauss_rate, r=min(41,longevity)),
                        seed_disp_eff = mutate_param(RNG, mu_seed_disp_eff, seed_disp_eff, param_type = int, gauss_rate = gauss_rate,mutate_type = mutate_type, l = 1+ 0.1 * seed_disp_max, r= 1 + 0.9*seed_disp_max),
@@ -53,6 +72,8 @@ def mutate_species_data(RNG, species_data,  SPECIES_MAX_AGE, mu_rate=0.1, gauss_
                        sprout_age_min = mutate_param(RNG, mu_sprout_age_min, sprout_age_min, param_type = int, gauss_rate = gauss_rate,mutate_type = mutate_type, l=0, r=sprout_age_max),
                        sprout_age_max= sprout_age_max,
                        fire_regen = mutate_param(RNG, mu_fire_regen, fire_regen,mutate_type = mutate_type, param_type= ['none','resprout','serotiny']))
+    print(x)
+    return x
 
 def generate_species_data(RNG, species_symbol, SPECIES_MAX_AGE):
     null_data= SpeciesData(species_symbol, longevity = None, sex_mat = None, seed_disp_eff = None, seed_disp_max = None, reprod_prob= None, sprout_age_min = None, sprout_age_max = None, fire_regen = None)
@@ -61,7 +82,13 @@ def generate_species_data(RNG, species_symbol, SPECIES_MAX_AGE):
 
 def mutate_species_params(RNG, species_params, mu_rate = 0.1, mutate_type = 'random', gauss_rate= 0.1 ):
     species_symbol, LeafLongevity, WoodDecayRate, MortalityCurve, GrowthCurve, LeafLignin, ShadeTolerance, FireTolerance = species_params
-    mu_LeafLongevity, mu_WoodDecayRate, mu_MortalityCurve, mu_GrowthCurve, mu_LeafLignin, mu_ShadeTolerance, mu_FireTolerance  = RNG.uniform(size = 7) <= mu_rate
+    if mu_rate is None:
+        choice = RNG.choice(7)
+        choices = np.full(7, 0)
+        choices[choice] = 1
+        mu_LeafLongevity, mu_WoodDecayRate, mu_MortalityCurve, mu_GrowthCurve, mu_LeafLignin, mu_ShadeTolerance, mu_FireTolerance  = choices
+    else:
+        mu_LeafLongevity, mu_WoodDecayRate, mu_MortalityCurve, mu_GrowthCurve, mu_LeafLignin, mu_ShadeTolerance, mu_FireTolerance  = RNG.uniform(size = 7) <= mu_rate
 
     return SpeciesParams(SpeciesCode= species_symbol,
                          LeafLongevity= mutate_param(RNG, mu_LeafLongevity, LeafLongevity, mutate_type=mutate_type, gauss_rate = gauss_rate, param_type = float, l=1, r=10),
@@ -72,9 +99,15 @@ def mutate_species_params(RNG, species_params, mu_rate = 0.1, mutate_type = 'ran
                          ShadeTolerance= mutate_param(RNG, mu_ShadeTolerance, ShadeTolerance, mutate_type=mutate_type, gauss_rate = gauss_rate, param_type = int,l=1,r=6),
                          FireTolerance= mutate_param(RNG, mu_FireTolerance, FireTolerance, mutate_type=mutate_type, gauss_rate = gauss_rate, param_type = int,l=1,r=6),
                          )
-def mutate_spp_params(RNG, species_symbol, ecoregion, year = 0, mu_rate = 0.1, gauss_rate = 0.1, mutate_type = 'random'):
+def mutate_spp_params(RNG, spp_params, year = 0, mu_rate = 0.1, gauss_rate = 0.1, mutate_type = 'random'):
     Year, EcoregionName, SpeciesCode, ProbEstablish, ProbMortality, ANPPmax, BiomassMax = spp_params
-    mu_ProbEstablish, mu_ProbMortality, mu_ANPPmax, mu_BiomassMax  = RNG.uniform(size =4) <= mu_rate
+    if mu_rate is None:
+        choice = RNG.choice(4)
+        choices = np.full(4, 0)
+        choices[choice] = 1
+        mu_ProbEstablish, mu_ProbMortality, mu_ANPPmax, mu_BiomassMax  = choices
+    else:
+        mu_ProbEstablish, mu_ProbMortality, mu_ANPPmax, mu_BiomassMax  = RNG.uniform(size =4) <= mu_rate
     return SppParams (Year = Year,
                       EcoregionName= EcoregionName,
                       SpeciesCode = SpeciesCode, 
@@ -85,11 +118,11 @@ def mutate_spp_params(RNG, species_symbol, ecoregion, year = 0, mu_rate = 0.1, g
 def generate_species_params(RNG, species_symbol):
     null_data= SpeciesParams(species_symbol, LeafLongevity = None, WoodDecayRate = None, MortalityCurve = None, GrowthCurve = None, LeafLignin= None, ShadeTolerance = None, FireTolerance = None)
     return mutate_species_params(RNG, null_data, mu_rate = 1.0)
-def generate_spp_params(RNG, species_symbol, ecoregion, year = 0):
-    null_data= SppParams(Year =year, EcoregionName = EcoregionName, SpeciesCode = species_symbol, ProbEstablish = None, ProbMortality = None, ANPPmax = None, BiomassMax = None)
+def generate_spp_params(RNG, species_symbol, ecoregion_name, year = 0):
+    null_data= SppParams(Year =year, EcoregionName = ecoregion_name, SpeciesCode = species_symbol, ProbEstablish = None, ProbMortality = None, ANPPmax = None, BiomassMax = None)
     return mutate_spp_params(RNG, null_data, mu_rate= 1.0)
 
-def generate_spp_params(RNG, species_symbol, ecoregion, year = 0):
+def generate_spp_paramsOLD(RNG, species_symbol, ecoregion, year = 0):
     return SppParams (Year = year,
                       EcoregionName= ecoregion,
                       SpeciesCode = species_symbol, 
@@ -767,17 +800,37 @@ if __name__ == '__main__':
     generate_experiment(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX)
 
 BiomassSuccessionIndividual = namedtuple('BiomassSuccessionIndividual',['SpeciesData','SpeciesParams','SppsParams'])
-def mutate_biomass_succession_individual(RNG, biomass_succession_individual, mutation_type = 'random', mutation_rate = None):
+def mutate_biomass_succession_individual(RNG, rs, sps, spps, SPECIES_MAX_AGE, mutate_type = 'random', mu_rate = None, gauss_rate= 0.1):
     #num of params
 
-    rs, sps, spps = biomass_succession_individual
-    if mutation_rate is None: # only one param
+    if mu_rate is None: # only one param
         which = RNG.choice(3)
         arr = [rs,sps, spps][which]
-        arr_entry = RNG.choice(len(arr))
+        arr_idx = RNG.choice(len(arr))
+        arr_entry = arr[arr_idx]
         if which == 0: #rs
-                param_entry = RNG.choice(len(arr[arr_entry]) - 1)
-                RNG.choice(len())
+                arr_entry = mutate_species_data(RNG, arr_entry, SPECIES_MAX_AGE, mu_rate=None,gauss_rate=gauss_rate, mutate_type = mutate_type)
+                rs =[x if i != arr_idx else arr_entry for i, x in enumerate(rs)]
+        elif which == 1:
+                arr_entry = mutate_species_params(RNG, arr_entry, mu_rate=None, gauss_rate=gauss_rate, mutate_type = mutate_type)
+                sps =[x if i != arr_idx else arr_entry for i, x in enumerate(sps)]
+        else:
+                arr_entry = mutate_spp_params(RNG, arr_entry, mu_rate=None, gauss_rate=gauss_rate, mutate_type = mutate_type)
+                spps =[x if i != arr_idx else arr_entry for i, x in enumerate(spps)]
+    else:
+        # SPECIES * (rs= 8, 7, 4)
+        total = (8+7+4)
+        N = float(len(rs)) # species
+        rs_ratio = 8.0/total/N
+        sps_ratio = 7.0/total/N
+        spps_ratio = 4.0/total/N
+        rs = [mutate_species_data(RNG, x, SPECIES_MAX_AGE, mu_rate = rs_ratio, gauss_rate = gauss_rate, mutate_type=mutate_type) for x in rs]
+        sps = [mutate_species_params(RNG, x, mu_rate = rs_ratio, gauss_rate = gauss_rate, mutate_type=mutate_type) for x in sps]
+        spps = [mutate_spp_params(RNG, x, mu_rate = rs_ratio, gauss_rate = gauss_rate, mutate_type=mutate_type) for x in spps]
+    return rs, sps, spps
+
+
+                                                        
         #elif which == 1: #s
     return BiomassSuccessionIndividual(rs, sps, spps)
 def generate_biomass_succession_individual(RNG, SPECIES, SPECIES_MAX_AGE, ECOREGIONS):
@@ -788,9 +841,7 @@ def generate_biomass_succession_individual(RNG, SPECIES, SPECIES_MAX_AGE, ECOREG
 
 
 
-def generate_experiment(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX, TIMESTEP = 5, DURATION = 50 ):
-    ECOREGIONS = generate_initial_communities_and_ecoregions(PREFIX,PLOTS)
-    rs, sps, spps = generate_biomass_succession_individual(RNG, FL5_SPECIES, SPECIES_MAX_AGE, ECOREGIONS)
+def generate_experiment_files(PREFIX, SPECIES, ECOREGIONS, TIMESTEP, DURATION, SEED_DISPERSAL, rs, sps, spps):
     generate_core_species_file(PREFIX, rs)
     ##sps = get_species_params()
     ##sps = replace_species(sps,get_fl5_species())
@@ -798,8 +849,20 @@ def generate_experiment(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX, TIMES
     #spps = get_spp_params()
     #spps = replace_species(spps,get_fl5_species())
     generate_spp_file(PREFIX, spps)
-    generate_biomass_succession_file(PREFIX, ECOREGIONS, TIMESTEP = TIMESTEP, SEED_DISPERSAL = 'NoDispersal') # NoDispersal, UniversalDispersal, WardSeedDispersal, DemographicSeeding
+    generate_biomass_succession_file(PREFIX, ECOREGIONS, TIMESTEP = TIMESTEP, SEED_DISPERSAL = SEED_DISPERSAL) # NoDispersal, UniversalDispersal, WardSeedDispersal, DemographicSeeding
     generate_scenario_file(PREFIX, DURATION = DURATION)
     generate_prism_data(PREFIX, ECOREGIONS)
-    generate_output_biomass_file(PREFIX, FL5_SPECIES, TIMESTEP = TIMESTEP)
+    generate_output_biomass_file(PREFIX, SPECIES, TIMESTEP = TIMESTEP)
+    return
+
+
+def generate_experiment(RNG, SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX, TIMESTEP = 5, DURATION = 50, SEED_DISPERSAL = "NoDispersal"):
+    ECOREGIONS = generate_initial_communities_and_ecoregions(PREFIX,PLOTS)
+    rs, sps, spps = generate_biomass_succession_individual(RNG, SPECIES, SPECIES_MAX_AGE, ECOREGIONS)
+    generate_experiment_files(PREFIX, SPECIES, ECOREGIONS, TIMESTEP, DURATION, SEED_DISPERSAL, rs, sps, spps)
+    return PREFIX, rs, sps, spps
+
+def generate_experiment_for_individual(RNG, SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX, rs, sps, spps, TIMESTEP = 5, DURATION = 50 , SEED_DISPERSAL = "NoDispersal"):
+    ECOREGIONS = generate_initial_communities_and_ecoregions(PREFIX,PLOTS)
+    generate_experiment_files(PREFIX, SPECIES, ECOREGIONS, TIMESTEP, DURATION, SEED_DISPERSAL, rs, sps, spps)
     return PREFIX
