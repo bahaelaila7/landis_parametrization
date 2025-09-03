@@ -45,7 +45,7 @@ def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_d
                 f.write(f'seed={exp_seed}\n')
                 f.write(f'mutate_type={mutate_type}\n')
                 f.write(f'gauss_rate={gauss_rate}\n')
-                f.write(f'INITIAL_T={T}\n')
+                f.write(f'INITIAL_T={INITIAL_T}\n')
                 f.write(f'alpha={alpha}\n')
                 f.write(f'prefix={prefix}')
                 for r in new_rs:

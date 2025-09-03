@@ -5,7 +5,7 @@ pval=1.1102230246251565e-16
 seed=5463
 mutate_type=random
 gauss_rate=0.1
-INITIAL_T=6098.160860609001
+INITIAL_T=10000
 alpha=0.9992
 prefix=exp_outputs/exp_618SpeciesData(species_symbol='PIEL', longevity=116, sex_mat=7, seed_disp_eff=24, seed_disp_max=67, reprod_prob=0.14334457882325302, sprout_age_min=6, sprout_age_max=16, fire_regen='none')
 SpeciesData(species_symbol='QUVI', longevity=179, sex_mat=17, seed_disp_eff=3, seed_disp_max=29, reprod_prob=0.21976049674503428, sprout_age_min=28, sprout_age_max=34, fire_regen='none')
