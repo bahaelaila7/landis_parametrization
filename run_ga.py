@@ -11,9 +11,9 @@ import numpy as np
 
 
 TIMESTEP=1 # years
-DURATION=20 # years
+DURATION=45 # years
 
-def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, MAX_ITER = 1000, INITIAL_T = 10000, alpha = 0.992 ):
+def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df, plot_measurements_df, plot_min_measurements_df, MAX_ITER = 1000, INITIAL_T = 10000, alpha = 0.992 ):
     best = -np.inf
     r2 = -np.inf
     exp_seed = RNG.integers(10000)
@@ -34,7 +34,7 @@ def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_d
             prefix= generate_experiment_for_individual(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix, rs= new_rs, sps=new_sps, spps = new_spps, TIMESTEP = TIMESTEP, DURATION = DURATION)
         print(subprocess.run(['bash', '-c', f'cd {prefix} && ./run_simulation.sh']))
         df = read_csvs(prefix, timestep = TIMESTEP, timehorizon = DURATION)
-        outputs= compare_data(prefix, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
+        outputs= compare_data(prefix, gt_df, plot_measurements_df, plot_min_measurements_df, df)
         new_r2 =outputs[0]['r2_restricted']
         new_r2_unrestricted = outputs[0]['r2_unrestricted']
         if new_r2 > best:
@@ -74,7 +74,7 @@ def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_d
             return
 
 
-def random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df ):
+def random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df, plot_measurements_df, plot_min_measurements_df ):
     
     best = -np.inf
     for i in range(30):
@@ -86,7 +86,7 @@ def random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plo
         prefix = generate_experiment(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix)
         print(subprocess.run(['bash', '-c', f'cd {prefix} && ./run_simulation.sh']))
         df = read_csvs(prefix)
-        outputs= compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
+        outputs= compare_data(gt_df, plot_measurements_df, plot_min_measurements_df, df)
         r2 =outputs[0]['r2_restricted']
         r2_unrestricted = outputs[0]['r2_unrestricted']
         best = max(best, outputs[0]['r2_restricted'])
@@ -109,7 +109,9 @@ if __name__ == '__main__':
     ##rs = replace_species(rs,get_fl5_species())
     FL5_SPECIES = get_fl5_species()
 
-    gt_df,plots_df, plot_measurements_df, plot_min_measurements_df = load_gt('./data_fl5_plot_genus_sp_ba_age_agb_20.csv')
-    #random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df )
-    simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df )
+    gt_df, plot_measurements_df, plot_min_measurements_df = load_gt('./data_fl5_plot_genus_sp_ba_age_agb_20.csv')
+    print(gt_df)
+    print(gt_df.shape)
+    #random_search(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df, plot_measurements_df, plot_min_measurements_df )
+    simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df, plot_measurements_df, plot_min_measurements_df )
 

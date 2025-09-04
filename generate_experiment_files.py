@@ -192,7 +192,7 @@ def load_plots_data(csv_file):
             d[plot_id] = i
             idx = i 
             i+=1
-            plot_list.append(FIAPlotClass(statecd=row['statecd'],unitcd = row['unitcd'],countycd=row['countycd'],plot=['plot'], lon = row['lon'], lat=['lat'], epa_l4= None, measurements = list()))
+            plot_list.append(FIAPlotClass(statecd=row['statecd'],unitcd = row['unitcd'],countycd=row['countycd'],plot=row['plot'], lon = row['lon'], lat=['lat'], epa_l4= None, measurements = list()))
         else:
             idx = d[plot_id]
         plot_obj = plot_list[idx]
@@ -207,26 +207,30 @@ def load_plots_data(csv_file):
 
 
 def generate_initial_communities_and_ecoregions(prefix, plots):
-    mapcodes = np.arange(len(plots)).reshape(1, -1).astype(np.uint8)
+    map_code_offset = 10
+    mapcodes = np.arange(map_code_offset,len(plots)+map_code_offset).reshape(1, -1).astype(np.uint32)
     img = Image.fromarray(mapcodes)
     img.save(f'{prefix}/initial-communities.tif', format='TIFF')
     ecoregions_dict = OrderedDict()
     eco_count = 0
     eco_name_offset = 1000
     ecoregions_dict['Inactive'] = (0,eco_name_offset,False)
-    ecoregions = np.full(len(plots),0).astype(np.uint8)
+    ecoregions = np.full(len(plots),0).astype(np.uint32)
     with open(f"{prefix}/biomass-succession_InitialCommunities.csv", 'w') as f:
-        f.write('MapCode,SpeciesName,CohortAge,CohortBiomass\n')
-        for plot_id, plot in enumerate(plots,start = 1):
-            if plot.epa_l4 not in ecoregions_dict:
-                eco_count += 1
-                ecoregions_dict[plot.epa_l4] = (eco_count, eco_count+eco_name_offset, True)
-                eco_idx = eco_count
-            else:
-                eco_idx, _, _ = ecoregions_dict[plot.epa_l4]
-            ecoregions[plot_id-1] = eco_idx
-            for m in plot.measurements[0].data:
-                f.write(f'{plot_id},{m.species_symbol},{m.ageclass},{int(m.drybio_ag)}\n')
+        with open(f"{prefix}/plot_mapcode_mapping.csv", 'w') as pf:
+            f.write('MapCode,SpeciesName,CohortAge,CohortBiomass\n')
+            pf.write('STATECD,UNITCD,COUNTYCD,PLOT,MapCode\n')
+            for plot_id, plot in enumerate(plots,start = map_code_offset):
+                pf.write(f'{plot.statecd},{plot.unitcd},{plot.countycd},{plot.plot},{plot_id}\n')
+                if plot.epa_l4 not in ecoregions_dict:
+                    eco_count += 1
+                    ecoregions_dict[plot.epa_l4] = (eco_count, eco_count+eco_name_offset, True)
+                    eco_idx = eco_count
+                else:
+                    eco_idx, _, _ = ecoregions_dict[plot.epa_l4]
+                ecoregions[plot_id-map_code_offset] = eco_idx
+                for m in plot.measurements[0].data:
+                    f.write(f'{plot_id},{m.species_symbol},{m.ageclass},{int(m.drybio_ag)}\n')
     with open(f'{prefix}/ecoregions.txt', 'w') as f:
         f.write('''LandisData	"Ecoregions"		
 
@@ -461,7 +465,7 @@ def generate_output_biomass_community_file(prefix, TIMESTEP = 5):
     with open(f'{prefix}/output_Biomass_community.txt', 'w') as f:
         f.write(f'''LandisData  "Output Biomass Community"
 
-Timestep {TIMESTEP}
+Timestep 1
 ''')
 
 def generate_biomass_succession_file(prefix, ecoregions, TIMESTEP = 5, SEED_DISPERSAL = 'WardSeedDispersal'):
@@ -601,9 +605,9 @@ CellLength  	63.6149353533 << meters, 100 x 100 m = 1 ha
 
 >> 	Output Extension		Initialization File
 >> 	----------------		-------------------
-	"Output Biomass"		output_Biomass.txt
+>>	"Output Biomass"		output_Biomass.txt
 	"Output Biomass Community"	output_Biomass_community.txt
-	"Output Cohort Statistics"	output_CohortStats.txt
+>>	"Output Cohort Statistics"	output_CohortStats.txt
 
 
 
