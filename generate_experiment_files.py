@@ -457,6 +457,13 @@ def get_spp_params():
         spps.append(SppParams(*x.split(',')))
     return spps
 
+def generate_output_biomass_community_file(prefix, TIMESTEP = 5):
+    with open(f'{prefix}/output_Biomass_community.txt', 'w') as f:
+        f.write(f'''LandisData  "Output Biomass Community"
+
+Timestep {TIMESTEP}
+''')
+
 def generate_biomass_succession_file(prefix, ecoregions, TIMESTEP = 5, SEED_DISPERSAL = 'WardSeedDispersal'):
     s=f'''LandisData  "Biomass Succession"
 
@@ -762,6 +769,7 @@ def replace_species(rs, species):
 
 
 def generate_output_biomass_file(prefix, species, TIMESTEP = 5):
+    print(f"OUTPUT TIMESTEP = {TIMESTEP}")
     txt = f'''LandisData  "Output Biomass"
 
 Timestep  {TIMESTEP}
@@ -844,6 +852,7 @@ def generate_biomass_succession_individual(RNG, SPECIES, SPECIES_MAX_AGE, ECOREG
 
 
 def generate_experiment_files(PREFIX, SPECIES, ECOREGIONS, TIMESTEP, DURATION, SEED_DISPERSAL, rs, sps, spps):
+    print(f"TIMESTEP = {TIMESTEP}, DURATION = {DURATION}")
     generate_core_species_file(PREFIX, rs)
     ##sps = get_species_params()
     ##sps = replace_species(sps,get_fl5_species())
@@ -855,6 +864,7 @@ def generate_experiment_files(PREFIX, SPECIES, ECOREGIONS, TIMESTEP, DURATION, S
     generate_scenario_file(PREFIX, DURATION = DURATION)
     generate_prism_data(PREFIX, ECOREGIONS)
     generate_output_biomass_file(PREFIX, SPECIES, TIMESTEP = TIMESTEP)
+    generate_output_biomass_community_file(PREFIX, TIMESTEP = TIMESTEP)
     return
 
 

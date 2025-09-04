@@ -25,7 +25,7 @@ def read_csvs(prefix, timestep=5, timehorizon = 50):
 
     return new_total_df
 
-def compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, total_df):
+def compare_data(prefix, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, total_df):
     gt = gt_df
     #print(total_df)
     #print(len(total_df))
@@ -69,6 +69,9 @@ def compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df,
                         sim.SIM_YEAR  = d.SIM_YEAR 
 
                         """)
+    h.to_csv(f'{prefix}/cohort_matching.csv')
+
+
     ##the hypothesis is that CohortBiomass is a good estimator of drybio_ag
     ##That means R^2 is going to be between CohortBiomass and drybio_ag directly
     ## NOT drybio_ag~CohortBiomass. Which is still easy
@@ -170,7 +173,7 @@ def load_gt(plots_csv):
 def run_comparison(plots_csv, prefix):
     df = read_csvs(prefix)
     gt_df,plots_df, plot_measurements_df, plot_min_measurements_df = load_gt(plots_csv)
-    return compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
+    return compare_data(prefix, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
 
 if __name__ == '__main__':
     import sys

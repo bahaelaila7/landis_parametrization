@@ -10,8 +10,10 @@ from collect_run_data import *
 import numpy as np
 
 
+TIMESTEP=1 # years
+DURATION=20 # years
 
-def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, MAX_ITER = 1000, INITIAL_T = 10000, alpha = 0.9992 ):
+def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, MAX_ITER = 1000, INITIAL_T = 10000, alpha = 0.992 ):
     best = -np.inf
     r2 = -np.inf
     exp_seed = RNG.integers(10000)
@@ -26,13 +28,13 @@ def simulated_annealing(RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, gt_df,plots_d
         print(subprocess.run(['cp', '-r', './template',prefix]))
         if rs is None:
 
-            prefix, new_rs, new_sps, new_spps = generate_experiment(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix)
+            prefix, new_rs, new_sps, new_spps = generate_experiment(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix, TIMESTEP = TIMESTEP, DURATION = DURATION)
         else:
             new_rs, new_sps, new_spps = mutate_biomass_succession_individual(RNG, rs,sps, spps, SPECIES_MAX_AGE, mutate_type=mutate_type, gauss_rate=gauss_rate)
-            prefix= generate_experiment_for_individual(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix, rs= new_rs, sps=new_sps, spps = new_spps)
+            prefix= generate_experiment_for_individual(exp_RNG, FL5_SPECIES, SPECIES_MAX_AGE,  PLOTS, PREFIX = prefix, rs= new_rs, sps=new_sps, spps = new_spps, TIMESTEP = TIMESTEP, DURATION = DURATION)
         print(subprocess.run(['bash', '-c', f'cd {prefix} && ./run_simulation.sh']))
-        df = read_csvs(prefix)
-        outputs= compare_data(gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
+        df = read_csvs(prefix, timestep = TIMESTEP, timehorizon = DURATION)
+        outputs= compare_data(prefix, gt_df,plots_df, plot_measurements_df, plot_min_measurements_df, df)
         new_r2 =outputs[0]['r2_restricted']
         new_r2_unrestricted = outputs[0]['r2_unrestricted']
         if new_r2 > best:
